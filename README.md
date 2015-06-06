@@ -1,6 +1,6 @@
-# Haskell-1
+# HackBulgaria-Haskell-1
 
-Functional Programming with Haskell
+All tasks and solutions for the _Functional Programming with Haskell_ course.
 
 ## Course Program
 

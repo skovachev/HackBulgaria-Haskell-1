@@ -1,4 +1,6 @@
-import Data.Char (chr, ord)
+import Data.Char (chr, ord, digitToInt)
+import Data.List.Split (splitOn)
+import Data.List (intersperse)
 
 even' :: Integer -> Bool
 even' number = number `mod` 2 == 0
@@ -136,9 +138,45 @@ string2number string = read string
 
 -- 27. Is valid ID?
 -- isValidID "6101047500" -> True
-isValidID :: String -> Bool
 
+mapInd :: (a -> Int -> b) -> [a] -> [b]
+mapInd f l = zipWith f l [0..]
+
+apply_weight :: Char -> Int -> Int
+apply_weight numberChar pos = digitToInt(numberChar) * (weights !! pos)
+  where weights = [2, 4, 8, 5, 10, 9, 7, 3, 6, 0] -- last weight is 0 to skip it in the sum
+
+calculate_last_id_number :: String -> Int
+calculate_last_id_number idNumber | result < 10 = result
+                                  | otherwise = 0
+  where result = sum(mapInd apply_weight idNumber) `div` 11
+
+isValidID :: String -> Bool
+isValidID idNumber | length(idNumber) /= 10 = False
+                   | otherwise = first_pair_ok && second_pair_ok && third_pair_ok && digitToInt(idNumber !! 9) == last_number
+  where first_pair = read ([idNumber !! 0] ++ [idNumber !! 1])
+        first_pair_ok = first_pair >= 0 && first_pair <= 99
+        second_pair = read ([idNumber !! 2] ++ [idNumber !! 3])
+        second_pair_ok = (second_pair > 0 && second_pair < 13) || (second_pair > 20 && second_pair < 33) || (second_pair > 40 && second_pair < 53)
+        third_pair = read ([idNumber !! 4] ++ [idNumber !! 5])
+        third_pair_ok = (third_pair > 0 && second_pair < 32) -- check if valid day for month X
+        last_number = calculate_last_id_number idNumber
 
 -- 28. Get the zodiac sign from an ID
 -- whatZodiacSignIs "6101047500" -> "Capricorn"
+-- TODO: just the month is not enough to accurately determine zodiac sign
 whatZodiacSignIs :: String -> String
+whatZodiacSignIs idNumber | month == 4 = "Aries"
+                          | month == 5 = "Taurus"
+                          | month == 6 = "Gemini"
+                          | month == 7 = "Cancer"
+                          | month == 8 = "Leo"
+                          | month == 9 = "Virgo"
+                          | month == 10 = "Libra"
+                          | month == 11 = "Scorpio"
+                          | month == 12 = "Sagittarius"
+                          | month == 1 = "Capricorn"
+                          | month == 2 = "Aquarius"
+                          | otherwise = "Pisces"
+  where second_pair = read ([idNumber !! 2] ++ [idNumber !! 3])
+        month = second_pair `mod` 20

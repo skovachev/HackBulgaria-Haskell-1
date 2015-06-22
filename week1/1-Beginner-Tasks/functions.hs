@@ -1,6 +1,6 @@
+import Prelude hiding (splitAt)
 import Data.Char (chr, ord, digitToInt)
-import Data.List.Split (splitOn)
-import Data.List (intersperse)
+import Data.List (splitAt)
 
 even' :: Integer -> Bool
 even' number = number `mod` 2 == 0
@@ -45,6 +45,7 @@ convert cur1 cur2 amount
 
 head' :: [a] -> a
 head' (x:_) = x
+head' [] = error "Head called on empty list"
 
 tail' :: [a] -> [a]
 tail' (_:xs) = xs
@@ -180,3 +181,70 @@ whatZodiacSignIs idNumber | month == 4 = "Aries"
                           | otherwise = "Pisces"
   where second_pair = read ([idNumber !! 2] ++ [idNumber !! 3])
         month = second_pair `mod` 20
+
+
+-- 30. Concatenate the lists
+-- concatenate [1, 2, 3] [2, 3, 4] -> [1, 2, 3, 2, 3, 4]
+concatenate :: [a] -> [a] -> [a]
+concatenate list1 list2 = list1 ++ list2
+
+-- 31. Take all elements of a list without the last one
+-- init' [1, 2, 3] -> [1, 2]
+-- init' []        -> "You can't do that with the empty list!"
+init' :: [a] -> [a]
+init' [] = error "You can't do that with the empty list!"
+init' list = fst (splitAt (length(list)-1) list)
+
+-- 32. Take the first n elements from a list
+-- take' 3 [1..10] -> [1, 2, 3]
+-- take' 3 [1, 2]  -> [1, 2]
+
+take' :: Int -> [a] -> [a]
+take' count list | count > 0 && count <= list_length = head' list:(take' (count-1) (tail' list))
+                 | count == 0 = []
+                 | otherwise = take' (count-1) list
+  where list_length = length list
+
+
+-- 33. Drop the first n elements from a list
+-- drop' 3 [1..10] -> [4, 5, 6, 7, 8, 9, 10]
+-- drop' 3 [1, 2]  -> []
+
+drop' :: Int -> [a] -> [a]
+drop' 0 list = list
+drop' count list = drop' (count-1) (tail' list)
+
+
+-- 34. Zipping lists
+-- zip' [1, 2, 3] ['a', 'b', 'c'] -> [(1, 'a'), (2, 'b'), (3, 'c')]
+-- zip' ["we", "like", "to"] ["party"] -> [("we", "party")]
+
+zip' :: [a] -> [b] -> [(a,b)]
+zip' [] _ = []
+zip' _ [] = []
+zip' list1 list2 = (head' list1, head' list2):(zip' (tail' list1) (tail' list2))
+
+-- 35. Now unzip it!
+-- unzip' [(1, 2), (2, 3), (3, 4)] -> ([1, 2, 3], [2, 3, 4])
+-- unzip' [("I", "surely"), ("do", "not"), ("like", "you")] -> (["I", "do", "like"], ["surely", "not", "you"])
+
+tupleCat (x1, y1) (x2, y2) = (x1 ++ x2, y1 ++ y2)
+
+unzip' :: [(a, b)] -> ([a], [b])
+unzip' [] = ([], [])
+unzip' list = tupleCat ([elementA], [elementB]) (unzip' remaining_tuples)
+  where tuple = head' list
+        remaining_tuples = tail' list
+        elementA = fst tuple
+        elementB = snd tuple
+
+-- 36. Grouping
+-- group' [1, 1, 2, 2, 1, 1, 3] -> [[1, 1], [2, 2], [1, 1], [3]]
+-- group' [1..5] -> [1, 2, 3, 4, 5]
+
+-- group' :: [a] -> [[a]]
+-- group' list | current_element == next_element = [[current_element, cu]] ++ group' list_remains
+--             | otherwise
+--   where current_element = head' list
+--         list_remains = tail' list
+--         next_element = head' list_remains

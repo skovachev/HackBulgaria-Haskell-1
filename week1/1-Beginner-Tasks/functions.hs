@@ -242,9 +242,96 @@ unzip' list = tupleCat ([elementA], [elementB]) (unzip' remaining_tuples)
 -- group' [1, 1, 2, 2, 1, 1, 3] -> [[1, 1], [2, 2], [1, 1], [3]]
 -- group' [1..5] -> [1, 2, 3, 4, 5]
 
--- group' :: [a] -> [[a]]
--- group' list | current_element == next_element = [[current_element, cu]] ++ group' list_remains
---             | otherwise
---   where current_element = head' list
---         list_remains = tail' list
---         next_element = head' list_remains
+group' :: Eq a => [a] -> [[a]]
+group' (x:xs) = (x:matched_elements):group' remainder
+  where (matched_elements, remainder) = span (== x) xs
+group' [] = []
+
+-- 37. Generate all pythagorean triples
+-- pyths 1 10 -> [(3,4,5), (6,8,10)]
+
+pyths :: a -> a -> [(a,a,a)]
+pyths start end = undefined
+-- TODO
+
+-- 38. Return a function, which multiplies a number by a factor
+-- let multiplyByTwo = multiplyBy 2
+-- multiplyByTwo 3 -> 6
+-- multiplyByTwo 9 -> 18
+
+multiplyBy :: Num a => a -> a -> a
+multiplyBy number = \y -> y * number
+
+-- 39. Get the last digit of all numbers in a list
+-- lastDigits [10..19] -> [0,1,2,3,4,5,6,7,8,9]
+lastDigits :: Integral a => [a] -> [a]
+lastDigits range = [ x `mod` 10 | x <- range ]
+-- lastDigits = applyToAll (`mod` 10)
+
+-- 40. Turn all strings in a list to integers
+-- You can expect that the input will be always valid!
+-- stringsToIntegers ["7", "42", "13"] -> [7, 42, 13]
+
+stringsToIntegers :: [String] -> [Integer]
+stringsToIntegers strings = [string2number x | x <- strings]
+-- stringsToIntegers = applyToAll string2number
+
+-- 41. Get the fibonacci numbers with the corresponding indices
+-- fibonaccis [0..5] -> [0, 1, 1, 2, 3, 5]
+-- fibonaccis [5, 10, 15] -> [5, 55, 610]
+
+fibonaccis :: [Int] -> [Int]
+fibonaccis numbers = [ fibonacci_list !! x | x <- numbers ]
+    where fibonacci_up_to = last numbers
+          fibonacci_list = 0:[ fib x | x <- [0..fibonacci_up_to]]
+
+
+-- 42. Take a function and apply it to all elements of a list
+-- let lastDigits = applyToAll (`mod` 10)
+-- lastDigits [10..19] -> [0,1,2,3,4,5,6,7,8,9]
+applyToAll :: (a -> a) -> [a] -> [a]
+applyToAll func = \range -> [ func x | x <- range ]
+
+
+-- 45. More generic - return a function that filters all the numbers in a list divisible by 'n'
+-- let divisibleByThree = divisibles 3
+-- divisibleByThree [1..10] -> [3,6,9]
+divisibles :: Integral t1 => t -> [t1] -> [t1]
+divisibles byNumber = \range -> [ x | x <- range, x `mod` 3 == 0]
+-- divisibles byNumber = filterBy (\x -> x `mod` byNumber == 0)
+
+-- 46. Take a predicate and filter a list
+-- let odds' = filterBy odd
+-- odds' [1..10] -> [1,3,5,7,9]
+filterBy :: (a -> Bool) -> [a] -> [a]
+filterBy func (x:xs) | func x = x : next_call
+                     | otherwise = next_call
+  where next_call = filterBy func xs
+filterBy func _ = []
+
+-- 48. Get the product of a list
+-- product' [1..5] -> 120
+product2 = foldl' (\a b -> a * b)
+
+-- 49. Concatenate the lists
+-- concat' [[1, 2, 3], [2, 3, 4], []] -> [1,2,3,2,3,4]
+concat' :: [[a]] -> [a]
+concat' (x:xs) = x ++ concat' xs
+concat' _ = []
+
+-- 50. Reducing!
+-- let sum'' = reduce (+) 0
+-- sum'' [1..10] -> 55
+reduce :: (a -> a -> a) -> a -> a
+
+
+
+map' :: (a -> b) -> [a] -> [b]
+map' func = \range -> [ func x | x <- range]
+
+filter' :: (a -> Bool) -> [a] -> [a]
+filter' func = \range -> [ x | x <- range, func x ]
+
+foldl' :: Num a => (a -> a -> a) -> [a] -> a
+foldl' func [x] = x
+foldl' func (x:xs) = func x (foldl' func xs)

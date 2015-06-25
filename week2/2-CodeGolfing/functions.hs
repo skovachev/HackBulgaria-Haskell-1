@@ -90,5 +90,65 @@ filterFilter func list = map filterItem list
 -- unit 1 3 -> [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 -- unit 2 2 -> [[2, 0], [0, 2]]
 -- ```
-unit :: a -> a -> [[b]]
-unit element dimensions = undefined
+unit :: (Ord a, Num a, Num t) => t -> a -> [[t]]
+unit element dimensions = generate_matrix 0
+  where generate_matrix current_row | current_row >= dimensions = []
+                                    | otherwise = [generate_row current_row]++generate_matrix (current_row+1)
+        generate_row pos = generate_item pos 0
+        generate_item pos current_pos | current_pos >= dimensions = []
+                                      | current_pos == pos = [element]++generate_item pos (current_pos+1)
+                                      | otherwise = [0]++generate_item pos (current_pos+1)
+
+
+-- ### 11. Get the nth row and column of a matrix
+-- ```
+-- row 1 [[1, 2, 3], [2, 3, 4]] -> [2, 3, 4]
+-- row 8 (unit 1 10) -> [0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
+-- ```
+row :: Int -> [a] -> a
+row n matrix = matrix !! n
+
+-- ### 12. Transpose a matrix
+-- ```
+-- transpose' [[1, 2, 3], [2, 3, 4]] -> [[1, 2], [2, 3], [3, 4]]
+-- transpose' (unit 1 2) -> [[1, 0], [0, 1]]
+-- transpose' [[1, 2], [3, 4], [5, 6]] -> [[1, 3, 5], [2, 4, 6]]
+-- ```
+transpose' :: [[a]] -> [[a]]
+transpose' matrix = [ (new_row y 0) | y <- [0..max_y_idx] ] 
+  where max_y_idx = (length (matrix !! 0)) - 1
+        num_rows = length matrix
+        new_row item_pos current_row | current_row >= num_rows = []
+                                     | otherwise = [(matrix !! current_row !! item_pos)] ++ new_row item_pos (current_row+1)
+
+-- ### 13. Sum of matrices
+-- ```
+-- sumMatrices (unit 2 2) (unit 3 2) == unit 5 2 -> True
+-- ```
+sumMatrices :: Num a => [[a]] -> [[a]] -> [[a]]
+sumMatrices matrix1 matrix2 | length matrix1 /= length matrix2 || length (matrix1 !! 0) /= length (matrix2 !! 0) = error "Cannot sum matrices"
+                            | otherwise = [ calculate_item x | x <- [0..x_max] ]
+  where x_max = length matrix1 - 1
+        y_max = length (matrix1 !! 0) - 1
+        calculate_item x = [ (matrix1 !! x !! y) + (matrix2 !! x !! y) | y <- [0..y_max] ]
+
+-- ### 14. Multiply matrices
+-- ```
+-- multMatrices [[1, 2], [3, 4]] [[1, 2], [3, 4]] -> [[7, 10], [15, 22]]
+-- ```
+multMatrices :: Num t => [[t]] -> [[t]] -> [[t]]
+multMatrices matrix1 matrix2 = [ calculate_row z | z <- [0..y_max] ]
+  where x_max = length matrix1 - 1
+        y_max = length (matrix1 !! 0) - 1
+        matrix2_t = transpose' matrix2
+        calculate_row z = [ calculate_item z y | y <- [0..y_max] ]
+        calculate_item z y = sum [ (matrix1 !! x !! y) * (matrix2_t !! x !! z) | x <- [0..x_max] ]
+        
+-- ### 15. Histogram
+-- ```
+-- histogram [1, 2, 1, 3, 1] ->
+-- " *
+--   *
+--   * * *
+-- 0 1 2 3 4 5 6 7 8 9"
+-- ```

@@ -42,7 +42,7 @@ mandelbrot :: Point -- Coordinate for calculation
 mandelbrot c z iter | iter > maxIterations = 0
                     | magnitude(zNext) > 2 = iter
                     | otherwise = mandelbrot c zNext (iter+1)
-    where zNext = z**2 + c
+    where zNext = z^2 + c
 
 -- Returning the number of iterations needed for given
 -- point to diverge

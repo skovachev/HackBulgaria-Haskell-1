@@ -249,10 +249,8 @@ group' [] = []
 
 -- 37. Generate all pythagorean triples
 -- pyths 1 10 -> [(3,4,5), (6,8,10)]
-
-pyths :: a -> a -> [(a,a,a)]
-pyths start end = undefined
--- TODO
+pyths :: Int -> Int -> [(Int, Int, Int)]
+pyths from to = [(a,b,c)| a <- [from..to], b <- [from..to], c <- [from..to], a <= b && a <= c, a^2 + b^2 == c^2]
 
 -- 38. Return a function, which multiplies a number by a factor
 -- let multiplyByTwo = multiplyBy 2

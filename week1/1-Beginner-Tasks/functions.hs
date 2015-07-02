@@ -309,29 +309,35 @@ filterBy func (x:xs) | func x = x : next_call
   where next_call = filterBy func xs
 filterBy func _ = []
 
--- 48. Get the product of a list
--- product' [1..5] -> 120
-product2 = foldl' (\a b -> a * b)
-
--- 49. Concatenate the lists
+-- 48. Concatenate the lists
 -- concat' [[1, 2, 3], [2, 3, 4], []] -> [1,2,3,2,3,4]
 concat' :: [[a]] -> [a]
 concat' (x:xs) = x ++ concat' xs
 concat' _ = []
 
--- 50. Reducing!
+-- 49. Reducing!
 -- let sum'' = reduce (+) 0
 -- sum'' [1..10] -> 55
-reduce :: (a -> a -> a) -> a -> a
+reducel :: (c -> a -> c) -> c -> [a] -> c
+reducel f acc (x:xs) = reducel f (f acc x) xs
+reducel _ acc _ = acc
 
 
+-- 50. Reduce in the other direction
+-- (reduce (-) 0) [1..5] -> 0-1-2-3-4-5 -> -15
+-- (reduce' (-) 0) [1..5] -> 1-(2-(3-(4-(5-0)))) -> 3
+reducer :: (a -> c -> c) -> c -> [a] -> c
+reducer f acc (x:xs) = f x (reducer f acc xs)
+reducer _ acc _ = acc
 
-map' :: (a -> b) -> [a] -> [b]
-map' func = \range -> [ func x | x <- range]
-
-filter' :: (a -> Bool) -> [a] -> [a]
-filter' func = \range -> [ x | x <- range, func x ]
-
-foldl' :: Num a => (a -> a -> a) -> [a] -> a
-foldl' func [x] = x
-foldl' func (x:xs) = func x (foldl' func xs)
+-- 51. Zip with a function!
+-- let zip'' = zipWith' (++)
+-- zip'' [1..3] [3..5] -> [[1, 3], [2, 4], [3, 5]]
+-- let sums = zipWith' (+)
+-- sums [1..3] [3..5] -> [4, 6, 8]
+zipWith' :: (a1 -> a -> t) -> [a1] -> [a] -> [t]
+zipWith' _ [] _ = []
+zipWith' _ _ [] = []
+zipWith' func list1 list2 = (func element1 element2):(zipWith' func (tail' list1) (tail' list2))
+  where element1 = head' list1
+        element2 = head' list2

@@ -1,3 +1,6 @@
+import Data.List (sort, group, find, transpose)
+import Data.Char (intToDigit)
+
 -- ### 01. Map as foldl
 -- Implement the function `map` using `foldl`
 
@@ -152,3 +155,13 @@ multMatrices matrix1 matrix2 = [ calculate_row z | z <- [0..y_max] ]
 --   * * *
 -- 0 1 2 3 4 5 6 7 8 9"
 -- ```
+-- histogram :: [Int] -> [[Char]]
+histogram :: [Int] -> IO [()]
+histogram list = mapM print (reverse (transpose [ intToDigit x : replicate (find_occurrence x) '*' ++ replicate (max_occurrence - (find_occurrence x)) ' ' | x <- [0..9] ]))
+  where calc_occurrences list = map (\l -> (head l, length l)) (group (sort list))
+        occurrences = calc_occurrences list
+        find_occurrence number | found /= [] = snd (head found)
+                               | otherwise = 0
+          where found = filter (\(element,count) -> element == number) occurrences
+        all_occurrences = map (\(element, count) -> count)
+        max_occurrence = maximum (all_occurrences occurrences)

@@ -1,146 +1,344 @@
-# IO in Haskell
+# Functional programming - week 5
 
-Haskell is a pure functional language. We have pure functions with no side effects.
+[Day 1](./README.md#day-1)
 
-IO is a side-effect by nature.
+[Day 2](./README.md#day-2)
+ 
+## Day 1
 
-So it is interesting how we can handle that.
+### Web Haskell
 
-[A good way to see more about Input and Output in Haskell is to read that chapter](http://learnyouahaskell.com/input-and-output)
+#### Stackage
 
-## Hello World in Haskell
+It is an index of mutually stable library versions in [Hackage](http://hackage.haskell.org/). 
+It is created automatically with building and testing different version of libraries from [Hackage](http://hackage.haskell.org/) on many operating systems. 
+Index description is kept in a single file [cabal.config](https://www.stackage.org/lts/cabal.config) which should be put along with cabal file in same folder.
 
-Here is the `hello.hs` program:
+#### DSL
+
+DSL = Domain Specific Language
+They are used to constrain operations to certain well defined and tested set. DSLs are usually easier to read and modify even by non-programmers. They are easier to test and proof, because of the constrained domain.
+In Haskell it is easy to make DSL and they are widely used.
+
+#### TemplateHaskell, QuasiQuotations and ChichkoviteChervenotikvenovcheta
+
+[QuasiQuotations](https://wiki.haskell.org/Quasiquotation) - a GHC extension for embedding DSLs (EDSL) inside Haskell code
+[TemplateHaskell](https://wiki.haskell.org/Template_Haskell) - a GHC extension for type-safe compile-time meta programming
+ChichkoviteChervenotikvenovcheta - extension for testing your speak skills
+
+#### Shakespearean templates
+
+[They](http://www.yesodweb.com/book/shakespearean-templates) are type-safe EDSL for HTML, CSS and JavaScript description. Coming from Yesod framework.
+
+#### FP Complete
+
+Cloud based IDE for Haskell - [www.fpcomplete.com](https://www.fpcomplete.com)
+
+#### Simple example
 
 ```haskell
-main = putStrLn "Hello World"
-```
+{-# LANGUAGE TypeFamilies, QuasiQuotes, TemplateHaskell, OverloadedStrings #-}
+module Main where
 
-We can run the program with the `runhaskell` command:
+import Yesod
 
-```
-$ runhaskell hello.hs
-Hello World
-```
+data App = App
 
-The `main` function is the function that ghc calls to start our Haskell program.
+instance Yesod App
 
-Lets check the type of our `main` function in ghci:
+mkYesod "App" [parseRoutes| / HomeR  GET |]
 
+getWorldR = defaultLayout $ [whamlet| <p> Hello World! |]
 
-```
-Prelude> :l hello.hs
-Prelude> :t main
 main :: IO ()
+main = warp 3000 App
 ```
 
-It is an empty IO operation.
+Can also be found here:  https://www.fpcomplete.com/user/varosi/minimalistic-yesod-server
 
-IO is a special type, that wraps data, that comes from input or goes to the output. This is Haskell's way of dealing with side effects & impure data.
+#### cabal install
 
-**Everything that touches IO, must become IO!**
+Note that it could take 15min on Core i7 first time for Yesod libraries to build. And it is good to use GHC >=7.8.x and cabal >= 1.18.
 
-Lets check the type of `putStrLn` in ghci:
+1. wget https://www.stackage.org/lts/cabal.config
+2. cabal update
+3. cabal sandbox init
+4. cabal install
 
+#### Preparation
+
+You'll need your code about fractals image generation.
+
+Search help install:
+
+* [Hoogle](https://www.haskell.org/hoogle/)
+* [Hayoo!](http://hayoo.fh-wedel.de)
+
+#### Tasks
+
+1. Make basic example run
+2. Modify basic example say "Hey, " and your name answering on /hey/#String
+3. Show Mandelbrot fractal on /mandelbrot
+4. Pass fractal image size on URL
+
+#### Helping snippet
+
+```haskell
+getHelloR :: MonadHandler m => m TypedContent
+getHelloR = sendResponse $ toTypedContent (typePlain, toContent "Say Haskell!")
 ```
-Prelude> :t putStrLn
-putStrLn :: String -> IO()
+
+"Say Haskell!" string may be changed with anything that is ByteString.
+
+## Day 2
+
+### Some more theory again.. Functors and Applicatives!
+
+#### The `Functor` typeclass
+
+We already encountered some problems when using the Maybe typeclass.
+
+Imagine that situation: Say that we have a function that reads a String and if it is a correct representation of integer we get a `Just` of it, else we get `Nothing`.
+
+We want to have a function, that receives a String that maybe represents an integer, then square it.
+
+```haskell
+readNumber :: String -> Maybe Int
+
+square :: String -> Maybe Int
+square s = case readNumber s of
+           Just x  -> Just $ x ^ 2
+           Nothing -> Nothing
 ```
 
-Again, we take a String and we return an empty IO operation.
+Hmm, okay, not really that bad. But should we do this `Maybe` wrapping and unwrapping everytime by hand? Isn't it possible, to write such a function, that it can do this for us?
 
-## Printing
+```haskell
+square :: String -> Maybe Int
+square s = magic (^2) $ readNumber s
 
-There are two general functions, that we are going to use to output something to the console:
+-- or even
+square = magic (^2) . readNumber
+```
+Yes, that looks more like Haskell, concise, terse code.
 
-* `putStrLn :: String -> IO ()`
-* `print :: Show a => a -> IO()`
+We know IO! What if we wanted to do the same thing, but with an IO?
 
-As you can see, `print` is more convinient, because it takes something, that can be showed. Sweet.
+```haskell
+getLine :: IO String
 
-## Do notation
+readNumber :: String -> Maybe Int
 
-We want our `main` function to behave like a normal procedural function - to do a sequence of reads and writes, taking the result wherever we need that.
+main = do
+  n <- getLine
+  let n' = readNumber n
+  print n'
+```
 
-The `do` notation has the following syntax:
+Wouldn't it be better, if we could use some `magic` again, so that:
 
 ```haskell
 main = do
-  print 5
-  print [1, 2, 3]
-  putStrLn "Hello World"
+  n <- magic readNumber getLine
+  print n
 ```
 
-This will execute the functions in the order we have called them. Sweet.
+Also, we have already done that wrapping and unwrappind, only with a different type.
 
-## Reading from the input
-
-Now, lets take some input from our user.
-
-For that, we have the function `getLine :: IO String`.
-
-First, lets see an example in `read.hs`:
+Let's get back to lists!
 
 ```haskell
-main = do
-  name <- getLine
-  putStrLn $ concat ["Hello ", name]
+data List a = Cons a (List a) | Nil
+
+readNumber :: String -> Maybe Int
+
+stringsToInt :: List String -> List (Maybe Int)
+stringsToInt (Cons x xs) = Cons (readNumber x) $ stringsToInt xs
+stringsToInt Nil         = Nil
 ```
 
-and:
-
-```
-$ runhaskell read.hs
-Rado
-Hello Rado
-```
-
-Now, there are a few things that are happening right now:
-
-* The type `IO String` is interesting
-* There is new operator - the `<-` arrow
-
-`IO String` means **tainted data**. Something impure is about to happen. That's why Haskell wraps the `String` within `IO`
-
-**In Haskell, there is no sane way to have the following function:**
-
-```
-somethingUnsafe :: IO String -> String
-```
-
-The magic happens thanks to the `<-` operator.
-
-You can read it as **unboxing** the pure value from impure operation. This will extract the `String` from `IO String`. But there is a cost. You can only extract the `String` to give it to a pure function.
-
-But the funciton that uses `IO String` **must** return something from the `IO` type. We cannot escape.
-
-## A small program
-
-Lets have a program that reads one integer and prints the prime factorization of that integer:
+Again, let's use our `magic`:
 
 ```haskell
-times :: Int -> Int -> Int
-times x y
-    | rem x y == 0 = 1 + times (div x y) y
-    | otherwise = 0
-
-isPrime :: Int -> Bool
-isPrime x = [x] == [ y | y <- [2..x], rem x y == 0]
-
-primeFactorization :: Int -> [(Int, Int)]
-primeFactorization x = [ (y, times x y) | y <- [2..x], isPrime y, rem x y == 0]
-
-main = do
-  rawN <- getLine
-  let n = read rawN
-  print $ primeFactorization n
+stringsToInt xs = magic readNumber xs
 ```
 
-We have a new part - `let n = read rawN`
+But wait.. We already have the `magic` function! It's `map`!
 
-Now, we have two things to consider in our main:
+Let's see what is the type signature of `map`:
+```haskell
+map :: (a -> b) -> List a -> List b
+```
 
-* The `<-` operator takes the pure value from a `IO` operation
-* `let` with `=` can create new pure value from another pure value. You cannot take value from `IO` operation.
+And what would be the signatures of our magic functions above:
+```haskell
+-- magic for Maybe:
+magic :: (a -> b) -> Maybe a -> Maybe b
 
-This is it. Now we have the basic stuff.
+--magic for IO:
+magic :: (a -> b) -> IO a -> IO b
+```
+
+Hmm.. These type signatures look almost the same if we don't count the `List`, `Maybe` and `IO`
+
+Okay. Let's see what is a `Functor`, indeed. We already said, that it's a typeclass.
+
+```haskell
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+```
+
+So, if we replace that `f` with the types above, `fmap` will match exactly our `magic` function.
+
+Let's implement some instances!
+
+```haskell
+instance Functor Maybe where
+--fmap :: (a -> b) -> Maybe a -> Maybe b
+  fmap f (Just x) = Just $ f x
+  fmap f Nothing  = Nothing
+
+instance Functor IO where
+--fmap :: (a -> b) -> IO a -> IO b
+  fmap f (IO a) = IO $ f a
+
+instance Functor List where
+--fmap :: (a -> b) -> List a -> List b
+  fmap = map
+```
+
+How sweet!
+
+`Note: because sometimes it'll be more convenient to use `fmap` infix, there is a synonym for it:
+
+```haskell
+infixl 4 <$>
+
+-- | An infix synonym for 'fmap'.
+(<$>) :: Functor f => (a -> b) -> f a -> f b
+(<$>) = fmap
+
+-- example:
+-- > (+1) <$> [1..10]
+-- [2..11]
+```
+
+
+So, the `Functor`, as all other typeclasses, gives us an abstraction. All `Functor`s, such as `List`s and `Maybe`s can be `fmap`ed over.
+
+##### Functor Laws
+
+```haskell
+fmap id      = id              -- Identity
+fmap (f . g) = fmap f . fmap g -- Composition
+```
+
+#### The `Applicative`
+
+Okay. For now, the `Functor` typeclass seems pretty rich.
+But can we do more things like:
+
+```haskell
+> Just (+3) `moreMagic` Just 2
+Just 5
+```
+
+Let's see what we have in our inventaire:
+```
+> :t fmap
+Num a => Maybe a
+> :t Just (+ 3)
+Num a => Maybe (a -> a)
+```
+
+That's bad. The only way to combine the two functions is by:
+```haskell
+combine :: Num a => Maybe (a -> a) -> Maybe a -> Maybe a
+combine (Just f) x = f <$> x
+combine Nothing  _ = Nothing
+```
+
+But that's not a behaviour that a `Functor` has. What is it?
+
+It's an `Applicative`, of course!
+
+See what behaviour the `Applicative` typeclass defines:
+
+```haskell
+class Functor f => Applicative f where
+  (<*>) :: f (a -> b) -> f a -> f b
+```
+
+Yee-haw! If we create an instance for `Applicative Maybe`,
+we could use the strange-looking `<*>` operator for our purposes.
+
+```haskell
+instance Applicative Maybe where
+  Just f <*> Just x = Just $ f x
+  _      <*> _      = Nohting
+
+--Just f <*> x = f <$> x
+```
+
+Okay. I have to mention some things:
+* First, in order to make something an instance of `Applicative`, it should be a `Functor` first.
+* Second, I lied. That's not really an `Applicative`. Here's the full definition:
+```haskell
+class Functor f => Applicative f where
+  pure  :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+```
+
+What is that `pure` function for? Well, it wraps a pure value in a minimal `Applicative` context. We will see later why.
+
+So, for `Applicative Maybe`, the logical `pure` would act as:
+
+```
+> pure 2 :: Maybe Int
+Just 2
+```
+
+##### Applicative Laws
+
+```haskell
+pure id <*> v     = v                -- Identity
+pure f <*> pure x = pure (f x)       -- Homomorphism
+u <*> pure y      = pure ($ y) <*> u -- Interchange
+pure (.) <*>
+    u <*> v <*> w = u <*> (v <*> w)  -- Composition
+```
+
+[Now go write some Haskell!](./2-Applicatives/README.md#01-the-binary-tree-functor)
+
+Some trickies:
+* the (->) functor
+* the (->) and List applicatives
+* more `Applicative`s functions:
+```haskell
+-- | Sequence actions, discarding the value of the first argument.
+(*>) :: f a -> f b -> f b
+
+-- | Sequence actions, discarding the value of the second argument.
+(<*) :: f a -> f b -> f a
+```
+
+#### The Alternative
+
+```haskell
+class Applicative f => Alternative f where
+  empty :: f a
+  (<|>) :: f a -> f a -> f a
+
+-- A Maybe example:
+instance Alternative Maybe where
+  empty = Nothing
+
+  Nothing <|> r = r
+  l       <|> _ = l
+```
+
+[Back to code!](./2-Applicatives/README.md#03-simple-parser)
+
+** Additional materials: **
+* [Learn You A Haskell](http://learnyouahaskell.com/functors-applicative-functors-and-monoids)
+* [In pictures!](http://adit.io/posts/2013-04-17-functors,_applicatives,_and_monads_in_pictures.html)
